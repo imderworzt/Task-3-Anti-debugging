@@ -568,17 +568,6 @@
                 }
             ```
 
-    - Stack Segment trick (`push ss; pop ss; pushf`)
-        - Nguyên lý: lợi dụng khác biệt xử lý Trap Flag/interrupt window khi single-step.
-        - Lưu ý: kỹ thuật cũ, phụ thuộc mạnh vào CPU/debugger; chủ yếu dùng nghiên cứu.
-        - Pseudocode:
-            ```
-                ; push ss
-                ; pop ss
-                ; pushf
-                ; đọc EFLAGS rồi kiểm tra TF có bị thay đổi bất thường không
-            ```
-
     - POPF + Trap Flag
         - Nguyên lý: set TF trong EFLAGS để ép single-step exception ở instruction tiếp theo; quan sát luồng xử lý.
         - Dùng kết hợp với SEH/VEH để phân biệt debugger có can thiệp hay không.
@@ -672,6 +661,7 @@
                     return (st >= 0);
                 }
             ```
+
 
 
 
