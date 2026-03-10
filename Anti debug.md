@@ -612,11 +612,6 @@
         - Mục tiêu: gây lệch giữa CPU thật và debugger/disassembler khi theo dõi từng bước.
         - Lưu ý: dễ làm hỏng tính tương thích, chỉ nên dùng cục bộ cho bài CTF/research.
 
-    - Khuyến nghị triển khai mục 6:
-        - Không dùng 1 kỹ thuật duy nhất; nên combine 2-3 check rồi chấm điểm (score-based).
-        - Tách check theo kiến trúc: x86 có inline asm thuận tiện hơn x64.
-        - Luôn có fallback path để tránh crash trên máy người dùng hợp lệ.
-
 7. Direct debugger interaction
     - Nhóm này tương tác trực tiếp với cơ chế debug event/NT API để làm giảm khả năng quan sát của debugger.
 
@@ -654,7 +649,7 @@
         - Rủi ro:
             - Có thể gây hành vi khó debug cho chính bạn.
             - Một số môi trường bảo mật/EDR hook API này.
-        - Code mẫu đầy đủ hơn:
+        - Code mẫu:
             ```
                 typedef LONG NTSTATUS;
                 typedef NTSTATUS (NTAPI* pNtSetInformationThread)(
@@ -678,13 +673,5 @@
                 }
             ```
 
-    - DebugActiveProcessStop / Detach self-check
-        - Ý tưởng: một số mẫu code kiểm tra trạng thái attach/detach không mong đợi để suy luận có debugger ngoài hay không.
-        - Lưu ý: kỹ thuật này dễ gây tác dụng phụ, không phù hợp cho chương trình thông thường.
-
-    - OutputDebugString side-channel
-        - Ý tưởng: gọi `OutputDebugStringA/W` và đo/quan sát phản ứng môi trường debug.
-
-        - Giá trị thực tế: thấp nếu đứng một mình, nhưng hữu ích khi cộng điểm cùng check khác.
 
 
