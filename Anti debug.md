@@ -582,12 +582,29 @@
     - POPF + Trap Flag
         - Nguyên lý: set TF trong EFLAGS để ép single-step exception ở instruction tiếp theo; quan sát luồng xử lý.
         - Dùng kết hợp với SEH/VEH để phân biệt debugger có can thiệp hay không.
-        - Pseudocode:
+        - Code:
             ```
-                ; pushfd
-                ; or dword ptr [esp], 0x100   ; set TF
-                ; popfd
-                ; nop                          ; instruction kế tiếp gây single-step
+                bool IsDebugged()
+                {
+                    bool bTraced = false;
+                
+                    __asm
+                    {
+                        push ss
+                        pop ss
+                        pushf
+                        test byte ptr [esp+1], 1
+                        jz movss_not_being_debugged
+                    }
+                
+                    bTraced = true;
+                
+                movss_not_being_debugged:
+                    // restore stack
+                    __asm popf;
+                
+                    return bTraced;
+                }
             ```
 
     - Instruction Prefixes
@@ -669,4 +686,5 @@
         - Ý tưởng: gọi `OutputDebugStringA/W` và đo/quan sát phản ứng môi trường debug.
 
         - Giá trị thực tế: thấp nếu đứng một mình, nhưng hữu ích khi cộng điểm cùng check khác.
+
 
