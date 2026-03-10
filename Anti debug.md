@@ -12,6 +12,8 @@
                     exit(0);
                 }
             ```
+            <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/8289638a-74d3-44d0-8fcd-3e8c9c4dc1de" />
+
 
     - CheckRemoteDebuggerPresent: kiểm tra debugger attach từ process khác trên cùng máy.
         - Code mẫu:
@@ -22,6 +24,8 @@
                     exit(0);
                 }
             ```
+            <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/919e62ef-f74f-402b-9860-ba7cf7050715" />
+
 
     - NtQueryInformationProcess: có nhiều class kiểm tra anti-debug.
         - ProcessDebugPort (7): giá trị -1 thường là có debugger.
@@ -33,6 +37,8 @@
                 NtQueryInformationProcess(GetCurrentProcess(), 0x1F, &value, sizeof(value), &ret);
                 if (value == 0) exit(0);
             ```
+            <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/13b02eed-7583-4e64-a6e8-8752569abe4b" />
+
 
     - RtlQueryProcessHeapInformation(): đọc heap flags của process hiện tại.
         - Code mẫu:
@@ -75,6 +81,8 @@
                     return *(PBYTE)(peb + 0x2) != 0;
                 }
             ```
+            <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/6d334294-6559-43aa-a327-bd93159e7ec2" />
+
 
     - NtGlobalFlag: kiểm tra bit debug trong PEB->NtGlobalFlag.
         - Code mẫu:
@@ -111,7 +119,7 @@
                 }
             ```
 
-2. Object Handles
+1. Object Handles
     - Một số API dùng object handle sẽ có hành vi khác khi debugger can thiệp.
 
     - CreateFile(): thử mở độc quyền chính file đang chạy.
@@ -253,7 +261,7 @@
                 }
             ```
 
-3. Process Memory
+2. Process Memory
     - Kiểm tra trực tiếp bộ nhớ process để tìm dấu vết breakpoints/patches.
 
     - Breakpoints:
@@ -368,7 +376,7 @@
                     }
                 ```
 
-4. Timing
+3. Timing
     - Khi debug (đặc biệt step) độ trễ tăng, có thể đo để suy luận.
 
     - RDTSC
@@ -449,7 +457,7 @@
                 }
             ```
 
-5. Exception
+4. Exception
     - Cố tình tạo exception rồi quan sát debugger có “nuốt” exception hay không.
 
     - UnhandledExceptionFilter()
@@ -491,7 +499,7 @@
 
     - Hiding Control Flow with Exception Handlers (SEH/VEH): thường dùng để làm rối luồng thực thi trong phân tích tĩnh/động.
 
-6. Assembly instructions
+5. Assembly instructions
     - Dựa vào khác biệt hành vi debugger khi CPU thực thi instruction đặc biệt. Nhóm này thường phụ thuộc kiến trúc (x86/x64), compiler (MSVC/GCC), và cách debugger xử lý exception.
 
     - INT3 (0xCC hoặc `CD 03`)
@@ -601,7 +609,7 @@
         - Mục tiêu: gây lệch giữa CPU thật và debugger/disassembler khi theo dõi từng bước.
         - Lưu ý: dễ làm hỏng tính tương thích, chỉ nên dùng cục bộ cho bài CTF/research.
 
-7. Direct debugger interaction
+6. Direct debugger interaction
     - Nhóm này tương tác trực tiếp với cơ chế debug event/NT API để làm giảm khả năng quan sát của debugger.
 
     - GenerateConsoleCtrlEvent + VEH/SEH
@@ -661,6 +669,7 @@
                     return (st >= 0);
                 }
             ```
+
 
 
 
