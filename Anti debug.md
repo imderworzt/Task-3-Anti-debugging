@@ -155,102 +155,102 @@
         - Code mẫu:
             ```
                 typedef struct _OBJECT_TYPE_INFORMATION
-{
-    UNICODE_STRING TypeName;
-    ULONG TotalNumberOfHandles;
-    ULONG TotalNumberOfObjects;
-} OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
+                {
+                    UNICODE_STRING TypeName;
+                    ULONG TotalNumberOfHandles;
+                    ULONG TotalNumberOfObjects;
+                } OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
+                
+                typedef struct _OBJECT_ALL_INFORMATION
+                {
+                    ULONG NumberOfObjects;
+                    OBJECT_TYPE_INFORMATION ObjectTypeInformation[1];
+                } OBJECT_ALL_INFORMATION, *POBJECT_ALL_INFORMATION;
 
-typedef struct _OBJECT_ALL_INFORMATION
-{
-    ULONG NumberOfObjects;
-    OBJECT_TYPE_INFORMATION ObjectTypeInformation[1];
-} OBJECT_ALL_INFORMATION, *POBJECT_ALL_INFORMATION;
-
-typedef NTSTATUS (WINAPI *TNtQueryObject)(
-    HANDLE                   Handle,
-    OBJECT_INFORMATION_CLASS ObjectInformationClass,
-    PVOID                    ObjectInformation,
-    ULONG                    ObjectInformationLength,
-    PULONG                   ReturnLength
-);
-
-enum { ObjectAllTypesInformation = 3 };
-
-#define STATUS_INFO_LENGTH_MISMATCH 0xC0000004
-
-bool Check()
-{
-    bool bDebugged = false;
-    NTSTATUS status;
-    LPVOID pMem = nullptr;
-    ULONG dwMemSize;
-    POBJECT_ALL_INFORMATION pObjectAllInfo;
-    PBYTE pObjInfoLocation;
-    HMODULE hNtdll;
-    TNtQueryObject pfnNtQueryObject;
-    
-    hNtdll = LoadLibraryA("ntdll.dll");
-    if (!hNtdll)
-        return false;
-        
-    pfnNtQueryObject = (TNtQueryObject)GetProcAddress(hNtdll, "NtQueryObject");
-    if (!pfnNtQueryObject)
-        return false;
-
-    status = pfnNtQueryObject(
-        NULL,
-        (OBJECT_INFORMATION_CLASS)ObjectAllTypesInformation,
-        &dwMemSize, sizeof(dwMemSize), &dwMemSize);
-    if (STATUS_INFO_LENGTH_MISMATCH != status)
-        goto NtQueryObject_Cleanup;
-
-    pMem = VirtualAlloc(NULL, dwMemSize, MEM_COMMIT, PAGE_READWRITE);
-    if (!pMem)
-        goto NtQueryObject_Cleanup;
-
-    status = pfnNtQueryObject(
-        (HANDLE)-1,
-        (OBJECT_INFORMATION_CLASS)ObjectAllTypesInformation,
-        pMem, dwMemSize, &dwMemSize);
-    if (!SUCCEEDED(status))
-        goto NtQueryObject_Cleanup;
-
-    pObjectAllInfo = (POBJECT_ALL_INFORMATION)pMem;
-    pObjInfoLocation = (PBYTE)pObjectAllInfo->ObjectTypeInformation;
-    for(UINT i = 0; i < pObjectAllInfo->NumberOfObjects; i++)
-    {
-
-        POBJECT_TYPE_INFORMATION pObjectTypeInfo =
-            (POBJECT_TYPE_INFORMATION)pObjInfoLocation;
-
-        if (wcscmp(L"DebugObject", pObjectTypeInfo->TypeName.Buffer) == 0)
-        {
-            if (pObjectTypeInfo->TotalNumberOfObjects > 0)
-                bDebugged = true;
-            break;
-        }
-
-        // Get the address of the current entries
-        // string so we can find the end
-        pObjInfoLocation = (PBYTE)pObjectTypeInfo->TypeName.Buffer;
-
-        // Add the size
-        pObjInfoLocation += pObjectTypeInfo->TypeName.Length;
-
-        // Skip the trailing null and alignment bytes
-        ULONG tmp = ((ULONG)pObjInfoLocation) & -4;
-
-        // Not pretty but it works
-        pObjInfoLocation = ((PBYTE)tmp) + sizeof(DWORD);
-    }
-
-NtQueryObject_Cleanup:
-    if (pMem)
-        VirtualFree(pMem, 0, MEM_RELEASE);
-
-    return bDebugged;
-}
+                typedef NTSTATUS (WINAPI *TNtQueryObject)(
+                    HANDLE                   Handle,
+                    OBJECT_INFORMATION_CLASS ObjectInformationClass,
+                    PVOID                    ObjectInformation,
+                    ULONG                    ObjectInformationLength,
+                    PULONG                   ReturnLength
+                );
+                
+                enum { ObjectAllTypesInformation = 3 };
+                
+                #define STATUS_INFO_LENGTH_MISMATCH 0xC0000004
+                
+                bool Check()
+                {
+                    bool bDebugged = false;
+                    NTSTATUS status;
+                    LPVOID pMem = nullptr;
+                    ULONG dwMemSize;
+                    POBJECT_ALL_INFORMATION pObjectAllInfo;
+                    PBYTE pObjInfoLocation;
+                    HMODULE hNtdll;
+                    TNtQueryObject pfnNtQueryObject;
+                
+                hNtdll = LoadLibraryA("ntdll.dll");
+                if (!hNtdll)
+                    return false;
+                    
+                pfnNtQueryObject = (TNtQueryObject)GetProcAddress(hNtdll, "NtQueryObject");
+                if (!pfnNtQueryObject)
+                    return false;
+            
+                status = pfnNtQueryObject(
+                    NULL,
+                    (OBJECT_INFORMATION_CLASS)ObjectAllTypesInformation,
+                    &dwMemSize, sizeof(dwMemSize), &dwMemSize);
+                if (STATUS_INFO_LENGTH_MISMATCH != status)
+                    goto NtQueryObject_Cleanup;
+            
+                pMem = VirtualAlloc(NULL, dwMemSize, MEM_COMMIT, PAGE_READWRITE);
+                if (!pMem)
+                    goto NtQueryObject_Cleanup;
+            
+                status = pfnNtQueryObject(
+                    (HANDLE)-1,
+                    (OBJECT_INFORMATION_CLASS)ObjectAllTypesInformation,
+                    pMem, dwMemSize, &dwMemSize);
+                if (!SUCCEEDED(status))
+                    goto NtQueryObject_Cleanup;
+            
+                pObjectAllInfo = (POBJECT_ALL_INFORMATION)pMem;
+                pObjInfoLocation = (PBYTE)pObjectAllInfo->ObjectTypeInformation;
+                for(UINT i = 0; i < pObjectAllInfo->NumberOfObjects; i++)
+                {
+            
+                    POBJECT_TYPE_INFORMATION pObjectTypeInfo =
+                        (POBJECT_TYPE_INFORMATION)pObjInfoLocation;
+            
+                    if (wcscmp(L"DebugObject", pObjectTypeInfo->TypeName.Buffer) == 0)
+                    {
+                        if (pObjectTypeInfo->TotalNumberOfObjects > 0)
+                            bDebugged = true;
+                        break;
+                    }
+            
+                    // Get the address of the current entries
+                    // string so we can find the end
+                    pObjInfoLocation = (PBYTE)pObjectTypeInfo->TypeName.Buffer;
+            
+                    // Add the size
+                    pObjInfoLocation += pObjectTypeInfo->TypeName.Length;
+            
+                    // Skip the trailing null and alignment bytes
+                    ULONG tmp = ((ULONG)pObjInfoLocation) & -4;
+            
+                    // Not pretty but it works
+                    pObjInfoLocation = ((PBYTE)tmp) + sizeof(DWORD);
+                }
+            
+                NtQueryObject_Cleanup:
+                    if (pMem)
+                        VirtualFree(pMem, 0, MEM_RELEASE);
+            
+                return bDebugged;
+                }
             ```
 
 3. Process Memory
@@ -669,3 +669,4 @@ NtQueryObject_Cleanup:
         - Ý tưởng: gọi `OutputDebugStringA/W` và đo/quan sát phản ứng môi trường debug.
 
         - Giá trị thực tế: thấp nếu đứng một mình, nhưng hữu ích khi cộng điểm cùng check khác.
+
