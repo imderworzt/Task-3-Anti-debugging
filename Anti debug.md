@@ -81,7 +81,8 @@
                     return *(PBYTE)(peb + 0x2) != 0;
                 }
             ```
-            <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/6d334294-6559-43aa-a327-bd93159e7ec2" />
+            <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b091d6f5-0c59-4a7f-84f0-232245f701e5" />
+
 
 
     - NtGlobalFlag: kiểm tra bit debug trong PEB->NtGlobalFlag.
@@ -669,6 +670,7 @@
                     return (st >= 0);
                 }
             ```
+
 
 
 
