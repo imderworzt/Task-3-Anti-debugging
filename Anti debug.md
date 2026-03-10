@@ -93,24 +93,64 @@
                     return *(DWORD*)(peb + 0xBC) & 0x70;
                 }
             ```
+            <img width="1920" height="1080" alt="ida_kJtWUtAGbh" src="https://github.com/user-attachments/assets/d51fd185-e89d-4228-a26b-d9b56b0cf1e4" />
+
 
     - Heap Flags/ForceFlags: debugger thường làm thay đổi các cờ heap.
         - Code mẫu:
             ```
-                bool Check() {
-                    PBYTE peb = (PBYTE)__readgsqword(0x60);
-                    return *(DWORD*)(peb + 0x70) & 0x2;
+                bool Check()
+                {
+                #ifndef _WIN64
+                    PPEB pPeb = (PPEB)__readfsdword(0x30);
+                    PVOID pHeapBase = !m_bIsWow64
+                        ? (PVOID)(*(PDWORD_PTR)((PBYTE)pPeb + 0x18))
+                        : (PVOID)(*(PDWORD_PTR)((PBYTE)pPeb + 0x1030));
+                    DWORD dwHeapFlagsOffset = IsWindowsVistaOrGreater()
+                        ? 0x40
+                        : 0x0C;
+                    DWORD dwHeapForceFlagsOffset = IsWindowsVistaOrGreater()
+                        ? 0x44 
+                        : 0x10;
+                #else
+                    PPEB pPeb = (PPEB)__readgsqword(0x60);
+                    PVOID pHeapBase = (PVOID)(*(PDWORD_PTR)((PBYTE)pPeb + 0x30));
+                    DWORD dwHeapFlagsOffset = IsWindowsVistaOrGreater()
+                        ? 0x70 
+                        : 0x14;
+                    DWORD dwHeapForceFlagsOffset = IsWindowsVistaOrGreater()
+                        ? 0x74 
+                        : 0x18;
+                #endif // _WIN64
+
+                    PDWORD pdwHeapFlags = (PDWORD)((PBYTE)pHeapBase + dwHeapFlagsOffset);
+                    PDWORD pdwHeapForceFlags = (PDWORD)((PBYTE)pHeapBase + dwHeapForceFlagsOffset);
+                    return (*pdwHeapFlags & ~HEAP_GROWABLE) || (*pdwHeapForceFlags != 0);
                 }
             ```
+            <img width="1920" height="1080" alt="ida_OF1K48NM8R" src="https://github.com/user-attachments/assets/399e283c-5b4a-42ae-94ca-c0cfab5f49d7" />
+
 
     - Heap Protection: kiểm tra pattern bảo vệ heap khi debug.
         - Code mẫu:
             ```
-                bool Check() {
-                    PBYTE peb = (PBYTE)__readgsqword(0x60);
-                    return *(DWORD*)(peb + 0x74) & 0x100;
+               bool Check()
+                {
+                    PROCESS_HEAP_ENTRY HeapEntry = { 0 };
+                    do
+                    {
+                        if (!HeapWalk(GetProcessHeap(), &HeapEntry))
+                            return false;
+                    } while (HeapEntry.wFlags != PROCESS_HEAP_ENTRY_BUSY);
+                
+                    PVOID pOverlapped = (PBYTE)HeapEntry.lpData + HeapEntry.cbData;
+                    return ((DWORD)(*(PDWORD)pOverlapped) == 0xABABABAB);
                 }
             ```
+            <img width="1920" height="1080" alt="devcpp_3pnU15p07Y" src="https://github.com/user-attachments/assets/fc306e63-4e80-41a2-8036-6d0f64397ce7" />
+
+            <img width="1920" height="1080" alt="ida_lwWZok7xcR" src="https://github.com/user-attachments/assets/7090ae3f-80d9-4513-8c1e-6999b20b4c7e" />
+
 
     - KUSER_SHARED_DATA: kiểm tra các field liên quan kernel debug state.
         - Code mẫu:
@@ -119,6 +159,9 @@
                     return *(DWORD*)(0x7FFE0000 + 0x2C) != 0;
                 }
             ```
+            <img width="1920" height="1080" alt="devcpp_sPBWTAOdU6" src="https://github.com/user-attachments/assets/47486068-481f-4fd1-ac15-2c3343ff167c" />
+            <img width="1920" height="1080" alt="ida_RKZBW5Ot58" src="https://github.com/user-attachments/assets/0a720da4-ed0d-42cb-bbdd-4c4edaeea36d" />
+
 
 1. Object Handles
     - Một số API dùng object handle sẽ có hành vi khác khi debugger can thiệp.
@@ -133,6 +176,9 @@
                     return INVALID_HANDLE_VALUE == CreateFileA(szFileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, 0);
                 }
             ```
+          <img width="1920" height="1080" alt="devcpp_KWBpyckSxW" src="https://github.com/user-attachments/assets/3aded66e-d17e-48b7-8e07-4b68ffd59650" />
+
+
 
     - CloseHandle(): truyền invalid handle; dưới debugger có thể phát sinh EXCEPTION_INVALID_HANDLE.
         - Code mẫu:
@@ -670,6 +716,7 @@
                     return (st >= 0);
                 }
             ```
+
 
 
 
